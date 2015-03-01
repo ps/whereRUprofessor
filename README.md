@@ -24,4 +24,5 @@ The app requires:
 ## Upcoming ##
 - Add comments
 - Add more info to fetched courses (course + department number)
+- Add limit of graduate vs undergraduate
 - Every now and then download entire course schedule to a database for faster queries!

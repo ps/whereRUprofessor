@@ -39,6 +39,8 @@ if __name__ == "__main__":
 	# formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 	# file_handler.setFormatter(formatter)
 	# app.logger.addHandler(file_handler)
+	
+	# TODO: remove debug mode once further tasks are done
 	app.debug = True
 	app.run()
 
