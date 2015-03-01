@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<title>Where RU Professor</title>
+    <meta name="description" content="">
+	  <meta name="author" content="Pawel Szczurko">
+    <link href="{{ url_for('static', filename='normalize.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='select2.css') }}" rel="stylesheet" type="text/css">
+    
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='select2.js') }}"></script>
+    <script>
+      $(document).ready(function() { $("#department_drop").select2({ width: 'resolve' }); });
+    </script>
+  </head>
+  <body>
+
+  <div class="header"> 
+    <a class="special" href="http://whereruprofessor.pawel.pw">Where <span class="RU">RU</span> Professor?</a>
+  </div>
+  <div class="container">
+    Have you ever needed to talk to a Rutgers professor who:
+    <ul>
+      <li>you are not currently taking a class with</li>
+      <li>is not responding to your emails</li>
+      <li>has no office hours</li>
+    </ul>
+    If yes, your alternate option is to visit this professor after a class he/she teaches. The only way to
+    figure this out is by browsing through the Rutgers Schedule of Classes. No one want to do that! This app
+    does it for you. It will look through all courses and list when and where the given professor teaches.
+    <br><br>
+    <u>Be aware!</u> If you use the 'All' option it might take a few minutes to look through all the courses!
+    <br><br>
+    Department: 
+    <select name="department" id="department_drop">
+      <option value="-1">All</option>
+      {% for dep in departments %}
+        <option value="{{ dep.code }}">{{ dep.description }}</option>
+      {% endfor %}
+    </select><br><br>
+     Professor last name: <input type="text" name="name" id="prof_name"><br><br>
+     <button id="locate_btn" type="button">Locate!</button> <br>
+     <div id="loader">Locating, please hold on!<br><img src="{{ url_for('static', filename='ajax-loader.gif') }}"></div>
+  </div>
+  <div class="footer">
+      &#169; {{ year }}  <a class="special" href="http://whereruprofessor.pawel.pw">
+      Where <span class="RU">RU</span> Professor?</a>
+      <iframe style="position: relative;top: 5px;left: 5px;" src="http://ghbtns.com/github-btn.html?user=ps&repo=Wikipedia_Translate&type=watch" allowtransparency="true" frameborder="0" scrolling="0" width="62" height="20"></iframe>
+  </div>
+<script>
+NUM_LEFT = 0;
+FOUND = false;
+DEPARTMENTS = [];
+$("#department_drop option").each(function() { 
+    DEPARTMENTS.push( {"code": $(this).val(), "description": $(this).text()} );
+});
+
+$("#locate_btn").click( function() {
+  FOUND = false;
+  $(".results").remove();
+  $("#loader").toggle();
+  prof_name = $("#prof_name").val();
+  dep = $("#department_drop option:selected").val();
+  
+  if(dep == -1) {
+    NUM_LEFT = DEPARTMENTS.length - 1;
+    // position 0 has the 'All' option
+    for(i = 1; i < DEPARTMENTS.length; i++) {
+      issue_request(DEPARTMENTS[i]["code"], DEPARTMENTS[i]["description"], prof_name);  
+    }
+  } else {
+    NUM_LEFT = 1;
+    dep_name = $("#department_drop option:selected").text();
+    issue_request(dep, dep_name, prof_name);
+  }
+  return false;
+});
+
+
+function issue_request(dep, dep_name, prof_name) {
+  request_url = "find/" + dep + "/" + prof_name
+  $.ajax( {
+    type: "GET",
+    url: request_url,
+    dataType: "json",
+    error: function(xhr, error){
+        console.log("an error has occurred " + error);
+        hide_loading();
+    },
+    success: function( data ) {
+      data = data["info"];
+      if(data.length != 0) {
+        FOUND = true;
+        for(i = 0; i < data.length; i++) {
+          cur = data[i];
+          info = "<b>Name</b>: " + cur["name"] + "<br>";
+          info += "<b>Department</b>: " + dep_name + "<br>";
+          info += "<b>Course</b>: " + cur["course"] + "<br>";
+          info += "<br>";
+          for(j = 0; j < cur["meeting_times"].length; j++) {
+            loc = cur["meeting_times"][j];
+            info += loc + "<br>";
+          }
+          $("<div class='results'>" + info + "</div>").insertBefore("#loader");
+        }
+      }
+      hide_loading();
+      
+    }});
+}
+function hide_loading() {
+  if(NUM_LEFT <= 1) {
+    $("#loader").toggle();
+    if(!FOUND) {
+      $("<div class='results'>Unable to find Professor " + $("#prof_name").val() + " he/she must be very good at hiding from you!</div>").insertBefore("#loader");
+    }
+  }
+  NUM_LEFT--;
+}
+  
+
+</script>
+</body>
+</html>
+
